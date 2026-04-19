@@ -1,0 +1,56 @@
+// firestore.rules
+// Deploy with: firebase deploy --only firestore:rules
+// Or paste into Firebase Console → Firestore → Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── HELPER: Check admin ─────────────────────────────────
+    function isAdmin() {
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // ─── PUBLIC READ COLLECTIONS ──────────────────────────────
+    // Anyone can read projects, about, socials, media, settings
+    // Only admin can write
+
+    match /projects/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /about/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /socials/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /media/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ─── ADMIN-ONLY COLLECTIONS ───────────────────────────────
+    match /admins/{id} {
+      allow read: if isAdmin();
+      allow write: if false; // only created via script
+    }
+
+    match /activity/{id} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+  }
+}

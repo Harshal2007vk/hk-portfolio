@@ -1,0 +1,27 @@
+// storage.rules
+// Deploy with: firebase deploy --only storage
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ─── HELPER ──────────────────────────────────────────────
+    function isAdmin() {
+      return request.auth != null &&
+             firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+    }
+
+    // ─── MEDIA FOLDER ────────────────────────────────────────
+    match /media/{allPaths=**} {
+      // Anyone can read (view images/videos)
+      allow read: if true;
+      // Only admin can upload or delete
+      allow write: if isAdmin() && request.resource.size < 50 * 1024 * 1024; // 50MB max
+    }
+
+    // Deny everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
